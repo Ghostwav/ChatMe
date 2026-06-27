@@ -3,20 +3,30 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ChatMe - WhatsApp-like real-time messaging API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User operations
+  - name: conversations
+    description: Conversation operations
+  - name: messages
+    description: Message operations
+  - name: groups
+    description: Group operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,439 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── AUTH ──────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login or register a user by username
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  # ── USERS ─────────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (for starting new chats)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by username or display name
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user's profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/profile:
+    put:
+      operationId: updateProfile
+      tags: [users]
+      summary: Update current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── CONVERSATIONS ─────────────────────────────────────────────────────────
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [conversations]
+      summary: List all conversations for the current user
+      responses:
+        "200":
+          description: Conversations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConversationSummary"
+
+    post:
+      operationId: createConversation
+      tags: [conversations]
+      summary: Create a direct (1-1) or group conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{conversationId}:
+    get:
+      operationId: getConversation
+      tags: [conversations]
+      summary: Get conversation details
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+    put:
+      operationId: updateConversation
+      tags: [conversations]
+      summary: Update group name/description/avatar
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationUpdate"
+      responses:
+        "200":
+          description: Updated conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+    delete:
+      operationId: deleteConversation
+      tags: [conversations]
+      summary: Leave or delete a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /conversations/{conversationId}/members:
+    get:
+      operationId: listMembers
+      tags: [conversations]
+      summary: List group members
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Members list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConversationMember"
+
+    post:
+      operationId: addMembers
+      tags: [conversations]
+      summary: Add members to a group
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMembersInput"
+      responses:
+        "200":
+          description: Members added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /conversations/{conversationId}/members/{userId}:
+    delete:
+      operationId: removeMember
+      tags: [conversations]
+      summary: Remove a member from a group
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Member removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /conversations/{conversationId}/read:
+    post:
+      operationId: markConversationRead
+      tags: [conversations]
+      summary: Mark all messages in a conversation as read
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /conversations/unread-counts:
+    get:
+      operationId: getUnreadCounts
+      tags: [conversations]
+      summary: Get unread message counts per conversation
+      responses:
+        "200":
+          description: Unread counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UnreadCount"
+
+  # ── MESSAGES ──────────────────────────────────────────────────────────────
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: Get messages in a conversation (paginated)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: before
+          in: query
+          schema:
+            type: integer
+          description: Load messages before this message ID (cursor)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /messages/{messageId}:
+    delete:
+      operationId: deleteMessage
+      tags: [messages]
+      summary: Delete a message (soft delete)
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /messages/{messageId}/react:
+    post:
+      operationId: reactToMessage
+      tags: [messages]
+      summary: Add or remove an emoji reaction
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionInput"
+      responses:
+        "200":
+          description: Reaction updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /messages/search:
+    get:
+      operationId: searchMessages
+      tags: [messages]
+      summary: Search messages across all conversations
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: conversationId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +474,288 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+
+    # ── AUTH ──────────────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+          minLength: 2
+          maxLength: 30
+        displayName:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    # ── USER ──────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, username, displayName, createdAt]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        statusText:
+          type: ["string", "null"]
+        isOnline:
+          type: boolean
+        lastSeen:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ProfileUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+        statusText:
+          type: string
+
+    # ── CONVERSATION ──────────────────────────────────────────────────────
+    Conversation:
+      type: object
+      required: [id, type, createdAt, members]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [direct, group]
+        name:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        createdBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationMember"
+
+    ConversationSummary:
+      type: object
+      required: [id, type, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [direct, group]
+        name:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        createdBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+        unreadCount:
+          type: integer
+        otherUser:
+          $ref: "#/components/schemas/User"
+        memberCount:
+          type: integer
+
+    ConversationMember:
+      type: object
+      required: [userId, role, joinedAt]
+      properties:
+        userId:
+          type: integer
+        role:
+          type: string
+          enum: [admin, member]
+        joinedAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    ConversationInput:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [direct, group]
+        memberIds:
+          type: array
+          items:
+            type: integer
+        name:
+          type: string
+        description:
+          type: string
+        avatarUrl:
+          type: string
+
+    ConversationUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        avatarUrl:
+          type: string
+
+    AddMembersInput:
+      type: object
+      required: [userIds]
+      properties:
+        userIds:
+          type: array
+          items:
+            type: integer
+
+    UnreadCount:
+      type: object
+      required: [conversationId, count]
+      properties:
+        conversationId:
+          type: integer
+        count:
+          type: integer
+
+    # ── MESSAGE ───────────────────────────────────────────────────────────
+    Message:
+      type: object
+      required: [id, conversationId, senderId, type, createdAt, isDeleted]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        senderId:
+          type: integer
+        sender:
+          $ref: "#/components/schemas/User"
+        type:
+          type: string
+          enum: [text, image, video, file, voice, system]
+        content:
+          type: ["string", "null"]
+        mediaUrl:
+          type: ["string", "null"]
+        mediaType:
+          type: ["string", "null"]
+        mediaSize:
+          type: ["integer", "null"]
+        fileName:
+          type: ["string", "null"]
+        replyToId:
+          type: ["integer", "null"]
+        replyTo:
+          $ref: "#/components/schemas/MessagePreview"
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reaction"
+        readBy:
+          type: array
+          items:
+            type: integer
+        isDeleted:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    MessagePreview:
+      type: object
+      required: [id, content, senderId]
+      properties:
+        id:
+          type: integer
+        content:
+          type: ["string", "null"]
+        senderId:
+          type: integer
+        senderName:
+          type: string
+        type:
+          type: string
+
+    MessageInput:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [text, image, video, file, voice]
+        content:
+          type: string
+        mediaUrl:
+          type: string
+        mediaType:
+          type: string
+        mediaSize:
+          type: integer
+        fileName:
+          type: string
+        replyToId:
+          type: integer
+
+    Reaction:
+      type: object
+      required: [emoji, userId]
+      properties:
+        emoji:
+          type: string
+        userId:
+          type: integer
+        userName:
+          type: string
+
+    ReactionInput:
+      type: object
+      required: [emoji]
+      properties:
+        emoji:
+          type: string
+
+    FileUploadResponse:
+      type: object
+      required: [url, type, size]
+      properties:
+        url:
+          type: string
+        type:
+          type: string
+        size:
+          type: integer
+        fileName:
+          type: string
