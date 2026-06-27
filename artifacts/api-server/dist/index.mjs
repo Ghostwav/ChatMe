@@ -164,7 +164,7 @@ var require_common = __commonJS({
     function setup(env) {
       createDebug.debug = createDebug;
       createDebug.default = createDebug;
-      createDebug.coerce = coerce2;
+      createDebug.coerce = coerce;
       createDebug.disable = disable;
       createDebug.enable = enable;
       createDebug.enabled = enabled;
@@ -319,7 +319,7 @@ var require_common = __commonJS({
         }
         return false;
       }
-      function coerce2(val) {
+      function coerce(val) {
         if (val instanceof Error) {
           return val.stack || val.message;
         }
@@ -50520,7 +50520,7 @@ var require_ms2 = __commonJS({
 var require_debug = __commonJS({
   "../../node_modules/.pnpm/debug@2.6.9/node_modules/debug/src/debug.js"(exports, module) {
     exports = module.exports = createDebug.debug = createDebug["default"] = createDebug;
-    exports.coerce = coerce2;
+    exports.coerce = coerce;
     exports.disable = disable;
     exports.enable = enable;
     exports.enabled = enabled;
@@ -50614,7 +50614,7 @@ var require_debug = __commonJS({
       }
       return false;
     }
-    function coerce2(val) {
+    function coerce(val) {
       if (val instanceof Error) return val.stack || val.message;
       return val;
     }
@@ -68730,452 +68730,11 @@ var optionalType = ZodOptional.create;
 var nullableType = ZodNullable.create;
 var preprocessType = ZodEffects.createWithPreprocess;
 var pipelineType = ZodPipeline.create;
-var coerce = {
-  string: ((arg) => ZodString.create({ ...arg, coerce: true })),
-  number: ((arg) => ZodNumber.create({ ...arg, coerce: true })),
-  boolean: ((arg) => ZodBoolean.create({
-    ...arg,
-    coerce: true
-  })),
-  bigint: ((arg) => ZodBigInt.create({ ...arg, coerce: true })),
-  date: ((arg) => ZodDate.create({ ...arg, coerce: true }))
-};
 
 // ../../lib/api-zod/src/generated/api.ts
 var HealthCheckResponse = objectType({
-  "status": stringType()
+  status: stringType()
 });
-var loginBodyUsernameMin = 2;
-var loginBodyUsernameMax = 30;
-var LoginBody = objectType({
-  "username": stringType().min(loginBodyUsernameMin).max(loginBodyUsernameMax),
-  "displayName": stringType().optional()
-});
-var LoginResponse = objectType({
-  "user": objectType({
-    "id": numberType(),
-    "username": stringType(),
-    "displayName": stringType(),
-    "avatarUrl": stringType().nullish(),
-    "statusText": stringType().nullish(),
-    "isOnline": booleanType().optional(),
-    "lastSeen": stringType().nullish(),
-    "createdAt": stringType()
-  }),
-  "token": stringType()
-});
-var LogoutResponse = objectType({
-  "success": booleanType()
-});
-var GetMeResponse = objectType({
-  "id": numberType(),
-  "username": stringType(),
-  "displayName": stringType(),
-  "avatarUrl": stringType().nullish(),
-  "statusText": stringType().nullish(),
-  "isOnline": booleanType().optional(),
-  "lastSeen": stringType().nullish(),
-  "createdAt": stringType()
-});
-var ListUsersQueryParams = objectType({
-  "search": coerce.string().optional().describe("Search by username or display name")
-});
-var ListUsersResponseItem = objectType({
-  "id": numberType(),
-  "username": stringType(),
-  "displayName": stringType(),
-  "avatarUrl": stringType().nullish(),
-  "statusText": stringType().nullish(),
-  "isOnline": booleanType().optional(),
-  "lastSeen": stringType().nullish(),
-  "createdAt": stringType()
-});
-var ListUsersResponse = arrayType(ListUsersResponseItem);
-var GetUserParams = objectType({
-  "userId": coerce.number()
-});
-var GetUserResponse = objectType({
-  "id": numberType(),
-  "username": stringType(),
-  "displayName": stringType(),
-  "avatarUrl": stringType().nullish(),
-  "statusText": stringType().nullish(),
-  "isOnline": booleanType().optional(),
-  "lastSeen": stringType().nullish(),
-  "createdAt": stringType()
-});
-var UpdateProfileBody = objectType({
-  "displayName": stringType().optional(),
-  "avatarUrl": stringType().optional(),
-  "statusText": stringType().optional()
-});
-var UpdateProfileResponse = objectType({
-  "id": numberType(),
-  "username": stringType(),
-  "displayName": stringType(),
-  "avatarUrl": stringType().nullish(),
-  "statusText": stringType().nullish(),
-  "isOnline": booleanType().optional(),
-  "lastSeen": stringType().nullish(),
-  "createdAt": stringType()
-});
-var ListConversationsResponseItem = objectType({
-  "id": numberType(),
-  "type": enumType(["direct", "group"]),
-  "name": stringType().nullish(),
-  "description": stringType().nullish(),
-  "avatarUrl": stringType().nullish(),
-  "createdBy": numberType().nullish(),
-  "createdAt": stringType(),
-  "lastMessage": objectType({
-    "id": numberType(),
-    "conversationId": numberType(),
-    "senderId": numberType(),
-    "sender": objectType({
-      "id": numberType(),
-      "username": stringType(),
-      "displayName": stringType(),
-      "avatarUrl": stringType().nullish(),
-      "statusText": stringType().nullish(),
-      "isOnline": booleanType().optional(),
-      "lastSeen": stringType().nullish(),
-      "createdAt": stringType()
-    }).optional(),
-    "type": enumType(["text", "image", "video", "file", "voice", "system"]),
-    "content": stringType().nullish(),
-    "mediaUrl": stringType().nullish(),
-    "mediaType": stringType().nullish(),
-    "mediaSize": numberType().nullish(),
-    "fileName": stringType().nullish(),
-    "replyToId": numberType().nullish(),
-    "replyTo": objectType({
-      "id": numberType(),
-      "content": stringType().nullable(),
-      "senderId": numberType(),
-      "senderName": stringType().optional(),
-      "type": stringType().optional()
-    }).optional(),
-    "reactions": arrayType(objectType({
-      "emoji": stringType(),
-      "userId": numberType(),
-      "userName": stringType().optional()
-    })).optional(),
-    "readBy": arrayType(numberType()).optional(),
-    "isDeleted": booleanType(),
-    "createdAt": stringType(),
-    "updatedAt": stringType().optional()
-  }).optional(),
-  "unreadCount": numberType().optional(),
-  "otherUser": objectType({
-    "id": numberType(),
-    "username": stringType(),
-    "displayName": stringType(),
-    "avatarUrl": stringType().nullish(),
-    "statusText": stringType().nullish(),
-    "isOnline": booleanType().optional(),
-    "lastSeen": stringType().nullish(),
-    "createdAt": stringType()
-  }).optional(),
-  "memberCount": numberType().optional()
-});
-var ListConversationsResponse = arrayType(ListConversationsResponseItem);
-var CreateConversationBody = objectType({
-  "type": enumType(["direct", "group"]),
-  "memberIds": arrayType(numberType()).optional(),
-  "name": stringType().optional(),
-  "description": stringType().optional(),
-  "avatarUrl": stringType().optional()
-});
-var CreateConversationResponse = objectType({
-  "id": numberType(),
-  "type": enumType(["direct", "group"]),
-  "name": stringType().nullish(),
-  "description": stringType().nullish(),
-  "avatarUrl": stringType().nullish(),
-  "createdBy": numberType().nullish(),
-  "createdAt": stringType(),
-  "members": arrayType(objectType({
-    "userId": numberType(),
-    "role": enumType(["admin", "member"]),
-    "joinedAt": stringType(),
-    "user": objectType({
-      "id": numberType(),
-      "username": stringType(),
-      "displayName": stringType(),
-      "avatarUrl": stringType().nullish(),
-      "statusText": stringType().nullish(),
-      "isOnline": booleanType().optional(),
-      "lastSeen": stringType().nullish(),
-      "createdAt": stringType()
-    }).optional()
-  }))
-});
-var GetConversationParams = objectType({
-  "conversationId": coerce.number()
-});
-var GetConversationResponse = objectType({
-  "id": numberType(),
-  "type": enumType(["direct", "group"]),
-  "name": stringType().nullish(),
-  "description": stringType().nullish(),
-  "avatarUrl": stringType().nullish(),
-  "createdBy": numberType().nullish(),
-  "createdAt": stringType(),
-  "members": arrayType(objectType({
-    "userId": numberType(),
-    "role": enumType(["admin", "member"]),
-    "joinedAt": stringType(),
-    "user": objectType({
-      "id": numberType(),
-      "username": stringType(),
-      "displayName": stringType(),
-      "avatarUrl": stringType().nullish(),
-      "statusText": stringType().nullish(),
-      "isOnline": booleanType().optional(),
-      "lastSeen": stringType().nullish(),
-      "createdAt": stringType()
-    }).optional()
-  }))
-});
-var UpdateConversationParams = objectType({
-  "conversationId": coerce.number()
-});
-var UpdateConversationBody = objectType({
-  "name": stringType().optional(),
-  "description": stringType().optional(),
-  "avatarUrl": stringType().optional()
-});
-var UpdateConversationResponse = objectType({
-  "id": numberType(),
-  "type": enumType(["direct", "group"]),
-  "name": stringType().nullish(),
-  "description": stringType().nullish(),
-  "avatarUrl": stringType().nullish(),
-  "createdBy": numberType().nullish(),
-  "createdAt": stringType(),
-  "members": arrayType(objectType({
-    "userId": numberType(),
-    "role": enumType(["admin", "member"]),
-    "joinedAt": stringType(),
-    "user": objectType({
-      "id": numberType(),
-      "username": stringType(),
-      "displayName": stringType(),
-      "avatarUrl": stringType().nullish(),
-      "statusText": stringType().nullish(),
-      "isOnline": booleanType().optional(),
-      "lastSeen": stringType().nullish(),
-      "createdAt": stringType()
-    }).optional()
-  }))
-});
-var DeleteConversationParams = objectType({
-  "conversationId": coerce.number()
-});
-var DeleteConversationResponse = objectType({
-  "success": booleanType()
-});
-var ListMembersParams = objectType({
-  "conversationId": coerce.number()
-});
-var ListMembersResponseItem = objectType({
-  "userId": numberType(),
-  "role": enumType(["admin", "member"]),
-  "joinedAt": stringType(),
-  "user": objectType({
-    "id": numberType(),
-    "username": stringType(),
-    "displayName": stringType(),
-    "avatarUrl": stringType().nullish(),
-    "statusText": stringType().nullish(),
-    "isOnline": booleanType().optional(),
-    "lastSeen": stringType().nullish(),
-    "createdAt": stringType()
-  }).optional()
-});
-var ListMembersResponse = arrayType(ListMembersResponseItem);
-var AddMembersParams = objectType({
-  "conversationId": coerce.number()
-});
-var AddMembersBody = objectType({
-  "userIds": arrayType(numberType())
-});
-var AddMembersResponse = objectType({
-  "success": booleanType()
-});
-var RemoveMemberParams = objectType({
-  "conversationId": coerce.number(),
-  "userId": coerce.number()
-});
-var RemoveMemberResponse = objectType({
-  "success": booleanType()
-});
-var MarkConversationReadParams = objectType({
-  "conversationId": coerce.number()
-});
-var MarkConversationReadResponse = objectType({
-  "success": booleanType()
-});
-var GetUnreadCountsResponseItem = objectType({
-  "conversationId": numberType(),
-  "count": numberType()
-});
-var GetUnreadCountsResponse = arrayType(GetUnreadCountsResponseItem);
-var ListMessagesParams = objectType({
-  "conversationId": coerce.number()
-});
-var listMessagesQueryLimitDefault = 50;
-var ListMessagesQueryParams = objectType({
-  "before": coerce.number().optional().describe("Load messages before this message ID (cursor)"),
-  "limit": coerce.number().default(listMessagesQueryLimitDefault)
-});
-var ListMessagesResponseItem = objectType({
-  "id": numberType(),
-  "conversationId": numberType(),
-  "senderId": numberType(),
-  "sender": objectType({
-    "id": numberType(),
-    "username": stringType(),
-    "displayName": stringType(),
-    "avatarUrl": stringType().nullish(),
-    "statusText": stringType().nullish(),
-    "isOnline": booleanType().optional(),
-    "lastSeen": stringType().nullish(),
-    "createdAt": stringType()
-  }).optional(),
-  "type": enumType(["text", "image", "video", "file", "voice", "system"]),
-  "content": stringType().nullish(),
-  "mediaUrl": stringType().nullish(),
-  "mediaType": stringType().nullish(),
-  "mediaSize": numberType().nullish(),
-  "fileName": stringType().nullish(),
-  "replyToId": numberType().nullish(),
-  "replyTo": objectType({
-    "id": numberType(),
-    "content": stringType().nullable(),
-    "senderId": numberType(),
-    "senderName": stringType().optional(),
-    "type": stringType().optional()
-  }).optional(),
-  "reactions": arrayType(objectType({
-    "emoji": stringType(),
-    "userId": numberType(),
-    "userName": stringType().optional()
-  })).optional(),
-  "readBy": arrayType(numberType()).optional(),
-  "isDeleted": booleanType(),
-  "createdAt": stringType(),
-  "updatedAt": stringType().optional()
-});
-var ListMessagesResponse = arrayType(ListMessagesResponseItem);
-var SendMessageParams = objectType({
-  "conversationId": coerce.number()
-});
-var SendMessageBody = objectType({
-  "type": enumType(["text", "image", "video", "file", "voice"]),
-  "content": stringType().optional(),
-  "mediaUrl": stringType().optional(),
-  "mediaType": stringType().optional(),
-  "mediaSize": numberType().optional(),
-  "fileName": stringType().optional(),
-  "replyToId": numberType().optional()
-});
-var SendMessageResponse = objectType({
-  "id": numberType(),
-  "conversationId": numberType(),
-  "senderId": numberType(),
-  "sender": objectType({
-    "id": numberType(),
-    "username": stringType(),
-    "displayName": stringType(),
-    "avatarUrl": stringType().nullish(),
-    "statusText": stringType().nullish(),
-    "isOnline": booleanType().optional(),
-    "lastSeen": stringType().nullish(),
-    "createdAt": stringType()
-  }).optional(),
-  "type": enumType(["text", "image", "video", "file", "voice", "system"]),
-  "content": stringType().nullish(),
-  "mediaUrl": stringType().nullish(),
-  "mediaType": stringType().nullish(),
-  "mediaSize": numberType().nullish(),
-  "fileName": stringType().nullish(),
-  "replyToId": numberType().nullish(),
-  "replyTo": objectType({
-    "id": numberType(),
-    "content": stringType().nullable(),
-    "senderId": numberType(),
-    "senderName": stringType().optional(),
-    "type": stringType().optional()
-  }).optional(),
-  "reactions": arrayType(objectType({
-    "emoji": stringType(),
-    "userId": numberType(),
-    "userName": stringType().optional()
-  })).optional(),
-  "readBy": arrayType(numberType()).optional(),
-  "isDeleted": booleanType(),
-  "createdAt": stringType(),
-  "updatedAt": stringType().optional()
-});
-var DeleteMessageParams = objectType({
-  "messageId": coerce.number()
-});
-var DeleteMessageResponse = objectType({
-  "success": booleanType()
-});
-var ReactToMessageParams = objectType({
-  "messageId": coerce.number()
-});
-var ReactToMessageBody = objectType({
-  "emoji": stringType()
-});
-var ReactToMessageResponse = objectType({
-  "success": booleanType()
-});
-var SearchMessagesQueryParams = objectType({
-  "q": coerce.string(),
-  "conversationId": coerce.number().optional()
-});
-var SearchMessagesResponseItem = objectType({
-  "id": numberType(),
-  "conversationId": numberType(),
-  "senderId": numberType(),
-  "sender": objectType({
-    "id": numberType(),
-    "username": stringType(),
-    "displayName": stringType(),
-    "avatarUrl": stringType().nullish(),
-    "statusText": stringType().nullish(),
-    "isOnline": booleanType().optional(),
-    "lastSeen": stringType().nullish(),
-    "createdAt": stringType()
-  }).optional(),
-  "type": enumType(["text", "image", "video", "file", "voice", "system"]),
-  "content": stringType().nullish(),
-  "mediaUrl": stringType().nullish(),
-  "mediaType": stringType().nullish(),
-  "mediaSize": numberType().nullish(),
-  "fileName": stringType().nullish(),
-  "replyToId": numberType().nullish(),
-  "replyTo": objectType({
-    "id": numberType(),
-    "content": stringType().nullable(),
-    "senderId": numberType(),
-    "senderName": stringType().optional(),
-    "type": stringType().optional()
-  }).optional(),
-  "reactions": arrayType(objectType({
-    "emoji": stringType(),
-    "userId": numberType(),
-    "userName": stringType().optional()
-  })).optional(),
-  "readBy": arrayType(numberType()).optional(),
-  "isDeleted": booleanType(),
-  "createdAt": stringType(),
-  "updatedAt": stringType().optional()
-});
-var SearchMessagesResponse = arrayType(SearchMessagesResponseItem);
 
 // src/routes/health.ts
 var router = (0, import_express.Router)();
@@ -87374,7 +86933,7 @@ var jsonSchema = external_exports.union([
 var bufferSchema = external_exports.custom((v) => v instanceof Buffer);
 function columnToSchema(column, factory) {
   const z$1 = factory?.zodInstance ?? external_exports;
-  const coerce2 = factory?.coerce ?? {};
+  const coerce = factory?.coerce ?? {};
   let schema;
   if (isWithEnum(column)) {
     schema = column.enumValues.length ? z$1.enum(column.enumValues) : z$1.string();
@@ -87401,15 +86960,15 @@ function columnToSchema(column, factory) {
     } else if (column.dataType === "array") {
       schema = z$1.array(z$1.any());
     } else if (column.dataType === "number") {
-      schema = numberColumnToSchema(column, z$1, coerce2);
+      schema = numberColumnToSchema(column, z$1, coerce);
     } else if (column.dataType === "bigint") {
-      schema = bigintColumnToSchema(column, z$1, coerce2);
+      schema = bigintColumnToSchema(column, z$1, coerce);
     } else if (column.dataType === "boolean") {
-      schema = coerce2 === true || coerce2.boolean ? z$1.coerce.boolean() : z$1.boolean();
+      schema = coerce === true || coerce.boolean ? z$1.coerce.boolean() : z$1.boolean();
     } else if (column.dataType === "date") {
-      schema = coerce2 === true || coerce2.date ? z$1.coerce.date() : z$1.date();
+      schema = coerce === true || coerce.date ? z$1.coerce.date() : z$1.date();
     } else if (column.dataType === "string") {
-      schema = stringColumnToSchema(column, z$1, coerce2);
+      schema = stringColumnToSchema(column, z$1, coerce);
     } else if (column.dataType === "json") {
       schema = jsonSchema;
     } else if (column.dataType === "custom") {
@@ -87423,7 +86982,7 @@ function columnToSchema(column, factory) {
   }
   return schema;
 }
-function numberColumnToSchema(column, z, coerce2) {
+function numberColumnToSchema(column, z, coerce) {
   let unsigned = column.getSQLType().includes("unsigned");
   let min;
   let max;
@@ -87491,18 +87050,18 @@ function numberColumnToSchema(column, z, coerce2) {
     min = Number.MIN_SAFE_INTEGER;
     max = Number.MAX_SAFE_INTEGER;
   }
-  let schema = coerce2 === true || coerce2?.number ? integer3 ? z.coerce.number() : z.coerce.number().int() : integer3 ? z.int() : z.number();
+  let schema = coerce === true || coerce?.number ? integer3 ? z.coerce.number() : z.coerce.number().int() : integer3 ? z.int() : z.number();
   schema = schema.gte(min).lte(max);
   return schema;
 }
-function bigintColumnToSchema(column, z, coerce2) {
+function bigintColumnToSchema(column, z, coerce) {
   const unsigned = column.getSQLType().includes("unsigned");
   const min = unsigned ? 0n : CONSTANTS.INT64_MIN;
   const max = unsigned ? CONSTANTS.INT64_UNSIGNED_MAX : CONSTANTS.INT64_MAX;
-  const schema = coerce2 === true || coerce2?.bigint ? z.coerce.bigint() : z.bigint();
+  const schema = coerce === true || coerce?.bigint ? z.coerce.bigint() : z.bigint();
   return schema.gte(min).lte(max);
 }
-function stringColumnToSchema(column, z, coerce2) {
+function stringColumnToSchema(column, z, coerce) {
   if (isColumnType(column, ["PgUUID"])) {
     return z.uuid();
   }
@@ -87536,7 +87095,7 @@ function stringColumnToSchema(column, z, coerce2) {
     regex = /^[01]+$/;
     max = column.dimensions;
   }
-  let schema = coerce2 === true || coerce2?.string ? z.coerce.string() : z.string();
+  let schema = coerce === true || coerce?.string ? z.coerce.string() : z.string();
   schema = regex ? schema.regex(regex) : schema;
   return max && fixed ? schema.length(max) : max ? schema.max(max) : schema;
 }
