@@ -10,7 +10,16 @@ declare module "express-session" {
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const userId = req.session?.userId;
+  let userId: number | undefined = req.session?.userId;
+
+  if (!userId) {
+    const authHeader = req.headers["authorization"];
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const parsed = parseInt(authHeader.slice(7).trim(), 10);
+      if (!isNaN(parsed) && parsed > 0) userId = parsed;
+    }
+  }
+
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -18,7 +27,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   if (!user[0]) {
-    req.session.destroy(() => {});
     res.status(401).json({ error: "User not found" });
     return;
   }
