@@ -29,9 +29,10 @@ export default function Login() {
     loginMutation.mutate(
       { data: { username: username.trim(), displayName: username.trim() } },
       {
-        onSuccess: async () => {
-          // Invalidate and refetch the /auth/me query so AuthContext sees the
-          // newly-authenticated user before we navigate away.
+        onSuccess: async (data: any) => {
+          if (data?.token) {
+            localStorage.setItem("chatme_token", data.token);
+          }
           await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
           await queryClient.refetchQueries({ queryKey: getGetMeQueryKey() });
           setLocation("/");
