@@ -87633,9 +87633,9 @@ router5.post("/conversations/:conversationId/messages", requireAuth, async (req,
     replyToId: replyToId ?? null
   }).returning();
   const formatted = await formatMessage(msg, me.id);
-  const io3 = req.io;
-  if (io3) {
-    io3.to(`conversation:${convId}`).emit("new_message", formatted);
+  const io2 = req.io;
+  if (io2) {
+    io2.to(`conversation:${convId}`).emit("new_message", formatted);
   }
   res.status(201).json(formatted);
 });
@@ -87652,9 +87652,9 @@ router5.delete("/messages/:messageId", requireAuth, async (req, res) => {
     return;
   }
   await db.update(messagesTable).set({ isDeleted: true, content: null }).where(eq(messagesTable.id, msgId));
-  const io3 = req.io;
-  if (io3) {
-    io3.to(`conversation:${msg.conversationId}`).emit("message_deleted", { messageId: msgId, conversationId: msg.conversationId });
+  const io2 = req.io;
+  if (io2) {
+    io2.to(`conversation:${msg.conversationId}`).emit("message_deleted", { messageId: msgId, conversationId: msg.conversationId });
   }
   res.json({ success: true });
 });
@@ -87668,10 +87668,10 @@ router5.post("/messages/:messageId/react", requireAuth, async (req, res) => {
   } else {
     await db.insert(messageReactionsTable).values({ messageId: msgId, userId: me.id, emoji: emoji3 });
   }
-  const io3 = req.io;
+  const io2 = req.io;
   const [msg] = await db.select().from(messagesTable).where(eq(messagesTable.id, msgId));
-  if (io3 && msg) {
-    io3.to(`conversation:${msg.conversationId}`).emit("message_reaction", {
+  if (io2 && msg) {
+    io2.to(`conversation:${msg.conversationId}`).emit("message_reaction", {
       messageId: msgId,
       conversationId: msg.conversationId,
       userId: me.id,
@@ -87836,15 +87836,15 @@ var import_dist = __toESM(require_dist5(), 1);
 var { Server, Namespace, Socket } = import_dist.default;
 
 // src/lib/socket.ts
-function createSocketServer(httpServer2) {
-  const io3 = new Server(httpServer2, {
+function createSocketServer(httpServer) {
+  const io2 = new Server(httpServer, {
     path: "/api/socket.io",
     cors: { origin: "*", credentials: true }
   });
-  io3.use((socket, next) => {
+  io2.use((socket, next) => {
     sessionMiddleware(socket.request, {}, next);
   });
-  io3.use(async (socket, next) => {
+  io2.use(async (socket, next) => {
     const session2 = socket.request.session;
     const userId = session2?.userId;
     if (!userId) {
@@ -87860,7 +87860,7 @@ function createSocketServer(httpServer2) {
     socket.data.user = user;
     next();
   });
-  io3.on("connection", async (socket) => {
+  io2.on("connection", async (socket) => {
     const userId = socket.data.userId;
     await db.update(usersTable).set({ isOnline: true, lastSeen: /* @__PURE__ */ new Date() }).where(eq(usersTable.id, userId));
     socket.broadcast.emit("user_online", { userId });
@@ -87899,7 +87899,7 @@ function createSocketServer(httpServer2) {
         await db.insert(messageReadsTable).values(
           unread.map((m) => ({ messageId: m.id, userId }))
         ).onConflictDoNothing();
-        io3.to(`conversation:${conversationId}`).emit("messages_read", {
+        io2.to(`conversation:${conversationId}`).emit("messages_read", {
           conversationId,
           userId,
           messageIds: unread.map((m) => m.id)
@@ -87915,19 +87915,81 @@ function createSocketServer(httpServer2) {
       });
     });
   });
-  return io3;
+  return io2;
 }
 
 // src/index.ts
+async function migrate() {
+  const sql2 = `
+DO $$ BEGIN
+  CREATE TYPE conversation_type AS ENUM ('direct', 'group');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+CREATE TABLE IF NOT EXISTS session (
+  sid varchar NOT NULL COLLATE "default", sess json NOT NULL, expire timestamp(6) NOT NULL
+);
+DO $$ BEGIN ALTER TABLE session ADD CONSTRAINT session_pkey PRIMARY KEY (sid);
+EXCEPTION WHEN duplicate_table THEN null; WHEN others THEN null; END $$;
+CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire);
+
+CREATE TABLE IF NOT EXISTS users (
+  id serial PRIMARY KEY, username text NOT NULL UNIQUE, display_name text NOT NULL,
+  avatar_url text, status_text text DEFAULT 'Hey there! I am using ChatMe.',
+  is_online boolean DEFAULT false, last_seen timestamp, created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE IF NOT EXISTS conversations (
+  id serial PRIMARY KEY, type conversation_type NOT NULL, name text, description text,
+  avatar_url text, created_by integer REFERENCES users(id), created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE IF NOT EXISTS conversation_members (
+  id serial PRIMARY KEY,
+  conversation_id integer NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role text DEFAULT 'member' NOT NULL, joined_at timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id serial PRIMARY KEY,
+  conversation_id integer NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id integer NOT NULL REFERENCES users(id),
+  type text DEFAULT 'text' NOT NULL, content text, media_url text, media_type text,
+  media_size integer, file_name text, reply_to_id integer,
+  is_deleted boolean DEFAULT false NOT NULL,
+  created_at timestamp DEFAULT now() NOT NULL, updated_at timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE IF NOT EXISTS message_reactions (
+  id serial PRIMARY KEY,
+  message_id integer NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES users(id),
+  emoji text NOT NULL, created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE IF NOT EXISTS message_reads (
+  id serial PRIMARY KEY,
+  message_id integer NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id integer NOT NULL REFERENCES users(id),
+  read_at timestamp DEFAULT now() NOT NULL
+);`;
+  const client = await pool.connect();
+  try {
+    await client.query(sql2);
+    logger.info("DB migration complete");
+  } finally {
+    client.release();
+  }
+}
 var rawPort = process.env["PORT"];
 if (!rawPort) throw new Error("PORT environment variable is required");
 var port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) throw new Error(`Invalid PORT: "${rawPort}"`);
-var httpServer = http.createServer(app_default);
-var io2 = createSocketServer(httpServer);
-app_default.io = io2;
-httpServer.listen(port, () => {
-  logger.info({ port }, "Server listening");
+migrate().then(() => {
+  const httpServer = http.createServer(app_default);
+  const io2 = createSocketServer(httpServer);
+  app_default.io = io2;
+  httpServer.listen(port, () => {
+    logger.info({ port }, "Server listening");
+  });
+}).catch((err) => {
+  logger.error({ err }, "Migration failed \u2014 aborting");
+  process.exit(1);
 });
 /*! Bundled license information:
 
